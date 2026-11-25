@@ -12,7 +12,6 @@ RUN dotnet publish "PayrollApp.Web.csproj" -c Release -o /app/publish /p:UseAppH
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
 
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "PayrollApp.Web.dll"]
+ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=http://+:${PORT:-8080} dotnet PayrollApp.Web.dll"]
