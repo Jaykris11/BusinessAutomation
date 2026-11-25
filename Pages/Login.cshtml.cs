@@ -165,14 +165,18 @@ public class LoginModel : PageModel
         }
         catch (Exception ex)
         {
-            // If tables haven't been created in Supabase yet
-            if (ex.Message.Contains("does not exist") || ex.InnerException?.Message.Contains("does not exist") == true)
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            if (msg.Contains("does not exist", StringComparison.OrdinalIgnoreCase))
             {
                 ErrorMessage = "Database tables are not set up yet in Supabase. Run the SQL script in your Supabase SQL Editor.";
             }
+            else if (msg.Contains("unreachable", StringComparison.OrdinalIgnoreCase) || msg.Contains("Network", StringComparison.OrdinalIgnoreCase))
+            {
+                ErrorMessage = "Database host unreachable (IPv6). On Render, use your Supabase Session Pooler host (aws-0-...pooler.supabase.com) instead of db.*.supabase.co.";
+            }
             else
             {
-                ErrorMessage = "An unexpected error occurred. Please check your database connection.";
+                ErrorMessage = $"Database connection error: {msg}";
             }
             return Page();
         }

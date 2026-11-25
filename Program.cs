@@ -12,8 +12,22 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 
+// Support both Npgsql key-value string and postgres:// URI formats (e.g. Render/Supabase Pooler)
+var rawConn = builder.Configuration.GetConnectionString("Default")
+              ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+              ?? "";
+if (rawConn.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+    rawConn.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+{
+    var uri = new Uri(rawConn);
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var dbName = uri.AbsolutePath.TrimStart('/');
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    rawConn = $"Host={uri.Host};Port={port};Database={dbName};Username={Uri.UnescapeDataString(userInfo[0])};Password={Uri.UnescapeDataString(userInfo.Length > 1 ? userInfo[1] : "")};SSL Mode=Require;Trust Server Certificate=true";
+}
+
 builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+    o.UseNpgsql(rawConn));
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(o =>
 {
