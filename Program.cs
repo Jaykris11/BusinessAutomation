@@ -216,12 +216,16 @@ using (var scope = app.Services.CreateScope())
             if (res.Succeeded) await userMgr.AddToRoleAsync(ownerUser, "Owner");
         }
 
-        // 5. Seed 3 Workers
+        // 5. Seed 7 Workers
         var sampleWorkers = new[]
         {
             new { Id = "EMP-001", Name = "Jane Doe", PayType = PayType.Hourly, Rate = 150m, Hours = 8m, Email = "jane@laufey.com" },
             new { Id = "EMP-002", Name = "Edwin Cruz", PayType = PayType.Daily, Rate = 850m, Hours = 8m, Email = "edwin@laufey.com" },
-            new { Id = "EMP-003", Name = "Mark Torres", PayType = PayType.Hourly, Rate = 140m, Hours = 8m, Email = "mark@laufey.com" }
+            new { Id = "EMP-003", Name = "Mark Torres", PayType = PayType.Hourly, Rate = 140m, Hours = 8m, Email = "mark@laufey.com" },
+            new { Id = "EMP-004", Name = "Sofia Reyes", PayType = PayType.Hourly, Rate = 160m, Hours = 8m, Email = "sofia@laufey.com" },
+            new { Id = "EMP-005", Name = "Liam Santos", PayType = PayType.Hourly, Rate = 145m, Hours = 8m, Email = "liam@laufey.com" },
+            new { Id = "EMP-006", Name = "Chloe Mendoza", PayType = PayType.Daily, Rate = 900m, Hours = 8m, Email = "chloe@laufey.com" },
+            new { Id = "EMP-007", Name = "Noah Bautista", PayType = PayType.Hourly, Rate = 155m, Hours = 8m, Email = "noah@laufey.com" }
         };
 
         foreach (var sw in sampleWorkers)

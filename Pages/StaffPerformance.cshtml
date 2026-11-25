@@ -15,6 +15,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .rank-badge {
             width: 28px;
@@ -145,6 +146,18 @@
                 </div>
             </div>
 
+            <div class="content-block" style="margin-bottom:20px;">
+                <div class="block-header" style="margin-bottom:10px;">
+                    <div>
+                        <div class="block-title">Staff Hours & Earnings Distribution (@currentRange.ToUpper())</div>
+                        <div class="block-subtitle">Hover or tap bars to inspect individual employee output in real time</div>
+                    </div>
+                </div>
+                <div style="position:relative; height:220px; width:100%;">
+                    <canvas id="staffChart"></canvas>
+                </div>
+            </div>
+
             <div class="content-block">
                 <div class="block-header">
                     <div>
@@ -202,6 +215,71 @@
 
 <script>
     const currentRange = '@currentRange';
+    let staffPerfChart = null;
+
+    function renderStaffChart(rows) {
+        const ctx = document.getElementById('staffChart');
+        if (!ctx) return;
+
+        const labels = rows.map(r => r.fullName || r.FullName);
+        const earnings = rows.map(r => r.earnedAmount ?? r.EarnedAmount ?? 0);
+        const hours = rows.map(r => r.hoursWorked ?? r.HoursWorked ?? 0);
+
+        if (staffPerfChart) {
+            staffPerfChart.data.labels = labels;
+            staffPerfChart.data.datasets[0].data = earnings;
+            staffPerfChart.data.datasets[1].data = hours;
+            staffPerfChart.update('none');
+            return;
+        }
+
+        staffPerfChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Accumulated Earnings (₱)',
+                        data: earnings,
+                        backgroundColor: 'rgba(35, 70, 51, 0.85)',
+                        borderRadius: 6,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Hours Logged',
+                        data: hours,
+                        backgroundColor: 'rgba(94, 234, 153, 0.8)',
+                        borderRadius: 6,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: true, position: 'top', labels: { boxWidth: 10, font: { size: 11 } } },
+                    tooltip: {
+                        backgroundColor: '#182C22',
+                        titleColor: '#A9CCBA',
+                        bodyColor: '#FFF',
+                        padding: 10,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    y: { type: 'linear', position: 'left', beginAtZero: true, grid: { color: '#F0F4F1' }, ticks: { font: { size: 11 }, callback: (v) => '₱' + v.toLocaleString() } },
+                    y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { font: { size: 11 }, callback: (v) => v + 'h' } },
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    // Initial render
+    const initialRows = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Leaderboard));
+    renderStaffChart(initialRows);
 
     async function pollPerformance() {
         try {
@@ -213,6 +291,10 @@
             document.getElementById('displayTotalHours').innerHTML = `${data.totalTeamHours.toFixed(2)} <span style="font-size:13px;font-weight:400;color:var(--text-muted);">hrs</span>`;
             document.getElementById('displayTotalWages').textContent = `₱${data.totalPayrollWages.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             document.getElementById('displayTopPerformer').textContent = data.topPerformerName;
+
+            if (data.leaderboard && data.leaderboard.length > 0) {
+                renderStaffChart(data.leaderboard);
+            }
 
             // Rebuild leaderboard rows
             const tbody = document.getElementById('leaderboardBody');

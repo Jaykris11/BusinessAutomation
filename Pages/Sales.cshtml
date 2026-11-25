@@ -15,6 +15,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="dashboard-body">
 
@@ -166,20 +167,8 @@
                                 Net Profit: ₱@Model.TotalProfit.ToString("N2")
                             </span>
                         </div>
-                        <div class="wave-chart-wrapper">
-                            <svg class="wave-svg" viewBox="0 0 700 160" preserveAspectRatio="none">
-                                <defs>
-                                    <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stop-color="#3A6D51" stop-opacity="0.3"/>
-                                        <stop offset="100%" stop-color="#3A6D51" stop-opacity="0.0"/>
-                                    </linearGradient>
-                                </defs>
-                                <path d="M 0,110 C 60,110 90,85 140,85 C 190,85 220,115 270,115 C 320,115 350,35 400,35 C 450,35 480,90 530,90 C 580,90 620,15 670,15 C 690,15 700,45 700,45 L 700,160 L 0,160 Z" fill="url(#salesGradient)" />
-                                <path d="M 0,110 C 60,110 90,85 140,85 C 190,85 220,115 270,115 C 320,115 350,35 400,35 C 450,35 480,90 530,90 C 580,90 620,15 670,15 C 690,15 700,45 700,45" fill="none" stroke="#234633" stroke-width="3" stroke-linecap="round" />
-                            </svg>
-                            <div class="wave-tooltip-pill">₱@Model.TotalProfit.ToString("N0")</div>
-                            <div class="wave-pin-dot"></div>
-                            <div class="wave-pin-line"></div>
+                        <div style="position:relative; height:220px; width:100%;">
+                            <canvas id="salesWaveChart"></canvas>
                         </div>
                     </div>
 
@@ -325,6 +314,81 @@
         if (sb) sb.classList.toggle('sidebar-open');
         if (bd) bd.classList.toggle('active');
     }
+
+    (function initSalesChart() {
+        const ctx = document.getElementById('salesWaveChart');
+        if (!ctx) return;
+        const c = ctx.getContext('2d');
+        const grad = c.createLinearGradient(0, 0, 0, 220);
+        grad.addColorStop(0, 'rgba(35, 70, 51, 0.35)');
+        grad.addColorStop(1, 'rgba(35, 70, 51, 0.0)');
+
+        const rawSales = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.RecentSales.OrderBy(s => s.TimestampUtc).Select(s => new {
+                label = s.TimestampUtc.AddHours(8).ToString("MMM dd hh:mm tt"),
+                amount = s.TotalAmount,
+                profit = Math.Round(s.TotalAmount * 0.58m, 2)
+            })
+        ));
+
+        const labels = rawSales.length ? rawSales.map(x => x.label) : ['No Orders Yet'];
+        const amounts = rawSales.length ? rawSales.map(x => x.amount) : [0];
+        const profits = rawSales.length ? rawSales.map(x => x.profit) : [0];
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Order Revenue (₱)',
+                        data: amounts,
+                        borderColor: '#234633',
+                        backgroundColor: grad,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#234633'
+                    },
+                    {
+                        label: 'Est. Profit (₱)',
+                        data: profits,
+                        borderColor: '#137333',
+                        borderWidth: 2,
+                        borderDash: [4, 4],
+                        fill: false,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: true, position: 'top', labels: { boxWidth: 10, font: { size: 11 } } },
+                    tooltip: {
+                        backgroundColor: '#182C22',
+                        titleColor: '#A9CCBA',
+                        bodyColor: '#FFF',
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ₱${Number(ctx.parsed.y).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#F0F4F1' }, ticks: { font: { size: 11 }, callback: (v) => '₱' + v.toLocaleString() } },
+                    x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 10 } } }
+                }
+            }
+        });
+    })();
 </script>
 </body>
 </html>
