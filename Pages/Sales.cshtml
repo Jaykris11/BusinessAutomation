@@ -1,0 +1,330 @@
+@page
+@model SalesModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Laufey | Sales & Revenue";
+    var currentRange = Model.Range?.ToLower() ?? "daily";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Laufey | Sales & Revenue</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body class="dashboard-body">
+
+<header class="mobile-topbar">
+    <div class="mobile-brand">
+        <div class="brand-circle"><img src="~/images/Laufey.jpg" alt="Laufey Logo" asp-append-version="true" /></div>
+        <span class="brand-name">Laufey</span>
+    </div>
+    <button type="button" class="btn-mobile-menu" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+</header>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
+
+<div class="app-shell">
+
+    <!-- 1. SIDEBAR -->
+    <aside class="app-sidebar" id="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <div class="brand-circle">
+                    <img src="~/images/Laufey.jpg" alt="Laufey Logo" asp-append-version="true" />
+                </div>
+                <span class="brand-name">Laufey</span>
+            </div>
+
+            <div class="sidebar-group-title">Main Menu</div>
+            <nav class="sidebar-nav">
+                <a href="/Index" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                        <span>Dashboard</span>
+                    </div>
+                </a>
+                <a href="/Sales" class="nav-link active">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                        <span>Sales & POS</span>
+                    </div>
+                    <span class="nav-badge-pill" style="background:#E6F4EA;color:#137333;">₱@Model.TotalSales.ToString("N0")</span>
+                </a>
+                <a href="/Stocks" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                        <span>Stock Management</span>
+                    </div>
+                </a>
+                <a href="/StaffPerformance" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                        <span>Employee Performance</span>
+                    </div>
+                </a>
+                <a href="/Approvals" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        <span>Requests & Approvals</span>
+                    </div>
+                </a>
+                <a href="/Payslips" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                        <span>Send Payment Slips</span>
+                    </div>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-profile-card">
+            <div class="profile-info">
+                <div class="profile-avatar"><img src="~/images/Laufey.jpg" alt="Profile" asp-append-version="true" /></div>
+                <div><div class="profile-name">Store Owner</div><div class="profile-role">Laufey Admin</div></div>
+            </div>
+            <a href="/Login" class="btn-signout" title="Sign out">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </a>
+        </div>
+    </aside>
+
+    <!-- 2. MAIN WORKSPACE -->
+    <main class="app-workspace">
+        <header class="workspace-topbar">
+            <div class="welcome-col">
+                <h1>Sales & Revenue Records</h1>
+                <p>Track cash flow, record store sales with auto-calc, and reconcile cash drawer</p>
+            </div>
+
+            <!-- Timeframe & Year Filters -->
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
+                <div style="display:flex; align-items:center; gap:6px; background:#F0F5F1; padding:3px 6px; border-radius:var(--radius-pill); border:1px solid var(--border-subtle);">
+                    <a href="?range=daily&FilterYear=@Model.FilterYear" class="btn-filter-pill @(currentRange == "daily" ? "active-range" : "")">Daily</a>
+                    <a href="?range=weekly&FilterYear=@Model.FilterYear" class="btn-filter-pill @(currentRange == "weekly" ? "active-range" : "")">Weekly</a>
+                    <a href="?range=monthly&FilterYear=@Model.FilterYear" class="btn-filter-pill @(currentRange == "monthly" ? "active-range" : "")">Monthly</a>
+                    <a href="?range=yearly&FilterYear=@Model.FilterYear" class="btn-filter-pill @(currentRange == "yearly" ? "active-range" : "")">All @Model.FilterYear</a>
+                </div>
+                <select onchange="window.location.href='?range=@currentRange&FilterYear='+this.value" style="padding:5px 10px; border-radius:999px; border:1px solid #CFDDD4; font-size:12px; font-weight:600; background:#FFF; color:var(--forest-dark);">
+                    <option value="2026" selected="@(Model.FilterYear == 2026)">2026</option>
+                    <option value="2025" selected="@(Model.FilterYear == 2025)">2025</option>
+                </select>
+            </div>
+        </header>
+
+        <div class="workspace-scroll">
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="toast-alert toast-success"><span>✓ @Model.SuccessMessage</span></div>
+            }
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="toast-alert" style="background:#FCE8E6;color:#C5221F;"><span>⚠️ @Model.ErrorMessage</span></div>
+            }
+
+            <!-- METRIC CARDS -->
+            <div class="compact-kpi-row">
+                <div class="kpi-mini-card">
+                    <div class="kpi-mini-top"><span class="kpi-mini-title">Total Gross Sales</span></div>
+                    <div class="kpi-mini-val" style="color:var(--forest-dark);">₱@Model.TotalSales.ToString("N2")</div>
+                    <div class="kpi-mini-sub" style="color:#137333;">@Model.TransactionsCount customer orders</div>
+                </div>
+                <div class="kpi-mini-card">
+                    <div class="kpi-mini-top"><span class="kpi-mini-title">Estimated Capital / Cost</span></div>
+                    <div class="kpi-mini-val" style="color:#6A7D73;">₱@Model.TotalCapital.ToString("N2")</div>
+                    <div class="kpi-mini-sub" style="color:var(--text-muted);">COGS & materials</div>
+                </div>
+                <div class="kpi-mini-card">
+                    <div class="kpi-mini-top"><span class="kpi-mini-title">Net Gross Profit</span></div>
+                    <div class="kpi-mini-val" style="color:#1E663B;">₱@Model.TotalProfit.ToString("N2")</div>
+                    <div class="kpi-mini-sub" style="color:#137333;">✓ Profit margin: ~58%</div>
+                </div>
+                <div class="kpi-mini-card" style="background:linear-gradient(145deg, #182C22 0%, #294F3B 100%); color:#FFF;">
+                    <div class="kpi-mini-top"><span class="kpi-mini-title" style="color:#A9CCBA;">Cash Drawer (Z-Read)</span></div>
+                    <div class="kpi-mini-val" style="color:#FFF;">₱@(Model.LatestClosing?.CashDrawerActual.ToString("N2") ?? "0.00")</div>
+                    <div class="kpi-mini-sub" style="color:rgba(255,255,255,0.8);">Status: @(Model.LatestClosing?.Status ?? "Unreconciled")</div>
+                </div>
+            </div>
+
+            <!-- GRID: SALES CHART & HISTORY + RECORD POS FORM -->
+            <div class="dashboard-grid-container">
+                <!-- Left 2/3 -->
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    <!-- CURVED FINANCIAL WAVE GRAPH -->
+                    <div class="wave-chart-card">
+                        <div class="block-header" style="margin-bottom:12px;">
+                            <div>
+                                <div class="block-title">Sales Trajectory & Profit Wave (@currentRange.ToUpper())</div>
+                                <div class="block-subtitle">Net earnings performance relative to period turnover</div>
+                            </div>
+                            <span class="badge-status badge-present" style="font-size:13px; font-weight:700;">
+                                Net Profit: ₱@Model.TotalProfit.ToString("N2")
+                            </span>
+                        </div>
+                        <div class="wave-chart-wrapper">
+                            <svg class="wave-svg" viewBox="0 0 700 160" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#3A6D51" stop-opacity="0.3"/>
+                                        <stop offset="100%" stop-color="#3A6D51" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M 0,110 C 60,110 90,85 140,85 C 190,85 220,115 270,115 C 320,115 350,35 400,35 C 450,35 480,90 530,90 C 580,90 620,15 670,15 C 690,15 700,45 700,45 L 700,160 L 0,160 Z" fill="url(#salesGradient)" />
+                                <path d="M 0,110 C 60,110 90,85 140,85 C 190,85 220,115 270,115 C 320,115 350,35 400,35 C 450,35 480,90 530,90 C 580,90 620,15 670,15 C 690,15 700,45 700,45" fill="none" stroke="#234633" stroke-width="3" stroke-linecap="round" />
+                            </svg>
+                            <div class="wave-tooltip-pill">₱@Model.TotalProfit.ToString("N0")</div>
+                            <div class="wave-pin-dot"></div>
+                            <div class="wave-pin-line"></div>
+                        </div>
+                    </div>
+
+                    <!-- RECORDED SALES TABLE -->
+                    <div class="content-block">
+                        <div class="block-header">
+                            <div>
+                                <div class="block-title">Recorded Customer Orders</div>
+                                <div class="block-subtitle">Timestamped sales, items, payment channels, and totals</div>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="clean-table compact-staff-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date / Time</th>
+                                        <th>Items Sold</th>
+                                        <th>Payment Channel</th>
+                                        <th>Amount</th>
+                                        <th>Ref No.</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.RecentSales.Any())
+                                    {
+                                        @foreach (var s in Model.RecentSales)
+                                        {
+                                            <tr>
+                                                <td>@s.TimestampUtc.AddHours(8).ToString("MMM dd, hh:mm tt")</td>
+                                                <td><strong>@(string.IsNullOrEmpty(s.Notes) ? "Counter Sale" : s.Notes)</strong></td>
+                                                <td>
+                                                    <span class="badge-status" style="background:#F0F5F1;color:var(--forest-dark);">@s.PaymentMethod</span>
+                                                </td>
+                                                <td><strong style="color:#137333;">₱@s.TotalAmount.ToString("N2")</strong></td>
+                                                <td>@(string.IsNullOrEmpty(s.ReferenceNumber) ? "—" : s.ReferenceNumber)</td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr><td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No sales recorded for this period yet.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right 1/3: Dedicated Point of Sale & Cash Drawer Closing -->
+                <div class="workspace-right-sidebar">
+                    <!-- RECORD SALE CARD -->
+                    <div class="right-card" style="border:1.5px solid var(--forest-primary);">
+                        <div class="right-card-header">
+                            <span class="right-card-title">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                                Record Store Sale
+                            </span>
+                            <span class="badge-status badge-present">Auto-Calc</span>
+                        </div>
+                        <form method="post" asp-page-handler="RecordSale">
+                            <div style="margin-bottom:12px;">
+                                <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:4px;">SELECT STOCK / PRODUCT</label>
+                                <select name="productId" id="posProduct" onchange="calcSale()" style="width:100%; padding:9px 10px; border-radius:8px; border:1px solid #CFDDD4; font-size:13px; outline:none; background:#FFF;">
+                                    <option value="0" data-price="0">-- Custom / Other Item --</option>
+                                    @foreach (var p in Model.Products)
+                                    {
+                                        <option value="@p.Id" data-price="@p.Price">@p.Name (Stock: @p.CurrentStock) - ₱@p.Price.ToString("N2")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:8px; margin-bottom:12px;">
+                                <div>
+                                    <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:4px;">QTY</label>
+                                    <input type="number" id="posQty" name="quantity" value="1" min="1" oninput="calcSale()" style="width:100%; box-sizing:border-box; padding:9px; border-radius:8px; border:1px solid #CFDDD4; font-size:13px; outline:none;" />
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:4px;">TOTAL (₱)</label>
+                                    <input type="number" step="0.01" id="posTotal" name="totalAmount" required placeholder="0.00" style="width:100%; box-sizing:border-box; padding:9px; border-radius:8px; border:1px solid #CFDDD4; font-size:14px; font-weight:700; color:#183625; outline:none;" />
+                                </div>
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:4px;">PAYMENT CHANNEL</label>
+                                <div style="display:flex; gap:6px;">
+                                    <label style="flex:1; text-align:center; padding:7px; border:1px solid #CFDDD4; border-radius:6px; font-size:12px; cursor:pointer; background:#F8FAF8;">
+                                        <input type="radio" name="paymentMethod" value="Cash" checked /> Cash
+                                    </label>
+                                    <label style="flex:1; text-align:center; padding:7px; border:1px solid #CFDDD4; border-radius:6px; font-size:12px; cursor:pointer; background:#F8FAF8;">
+                                        <input type="radio" name="paymentMethod" value="GCash" /> GCash
+                                    </label>
+                                    <label style="flex:1; text-align:center; padding:7px; border:1px solid #CFDDD4; border-radius:6px; font-size:12px; cursor:pointer; background:#F8FAF8;">
+                                        <input type="radio" name="paymentMethod" value="Maya" /> Maya
+                                    </label>
+                                </div>
+                            </div>
+                            <div style="margin-bottom:14px;">
+                                <label style="display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:4px;">REFERENCE NO. (Optional)</label>
+                                <input type="text" name="referenceNumber" placeholder="e.g. 1002938192" style="width:100%; box-sizing:border-box; padding:8px 10px; border-radius:8px; border:1px solid #CFDDD4; font-size:12.5px; outline:none;" />
+                            </div>
+                            <button type="submit" style="width:100%; padding:11px; border-radius:8px; border:none; background:linear-gradient(135deg, #244935 0%, #172D21 100%); color:#FFF; font-weight:700; font-size:13.5px; cursor:pointer;">
+                                Confirm Sale & Deduct Stock
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- CASH DRAWER RECONCILIATION CARD -->
+                    <div class="right-card">
+                        <div class="right-card-header">
+                            <span class="right-card-title">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                                Cash Drawer Reconciliation (Z-Read)
+                            </span>
+                        </div>
+                        <form method="post" asp-page-handler="ReconcileDrawer">
+                            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Enter actual physical cash counted in register:</p>
+                            <div style="margin-bottom:10px;">
+                                <input type="number" step="0.01" name="cashActual" required placeholder="0.00" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #CFDDD4; font-size:15px; font-weight:700; color:var(--forest-dark); outline:none;" />
+                            </div>
+                            <div style="margin-bottom:12px;">
+                                <input type="text" name="notes" placeholder="Notes (e.g. ₱500 petty cash remaining)" style="width:100%; box-sizing:border-box; padding:8px 10px; border-radius:8px; border:1px solid #CFDDD4; font-size:12px; outline:none;" />
+                            </div>
+                            <button type="submit" class="btn-pill-action" style="width:100%; padding:9px; font-weight:700;">Finalize Z-Read</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    function calcSale() {
+        const select = document.getElementById('posProduct');
+        const selected = select.options[select.selectedIndex];
+        const price = parseFloat(selected.getAttribute('data-price')) || 0;
+        const qty = parseInt(document.getElementById('posQty').value) || 1;
+        document.getElementById('posTotal').value = (price * qty).toFixed(2);
+    }
+</script>
+<script>
+    function toggleMobileSidebar() {
+        const sb = document.getElementById('sidebar');
+        const bd = document.getElementById('sidebarBackdrop');
+        if (sb) sb.classList.toggle('sidebar-open');
+        if (bd) bd.classList.toggle('active');
+    }
+</script>
+</body>
+</html>

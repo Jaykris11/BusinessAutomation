@@ -1,0 +1,219 @@
+@page
+@model LoginModel
+@{
+    Layout = null;
+    var isEmployee = Model.Input.Role == "Employee";
+    var showEmployeePw = Model.EmployeeStep == 2;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#F3F7F2" />
+    <title>Laufey | Sign in</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/laufey.css" asp-append-version="true" />
+</head>
+<body class="auth">
+<div class="auth-shell" id="shell">
+
+    <!-- LEFT: form -->
+    <section class="panel-form">
+
+        <div class="form-wrap">
+            <div class="form-inner">
+
+                <h1 id="title" class="reveal" style="--d:.15s">@(isEmployee ? "Team Portal" : "Welcome back")</h1>
+                <p id="subtitle" class="muted single-line reveal" style="--d:.22s">@(isEmployee
+                    ? "Sign in to clock in, view your payslips, and check your advanced payments."
+                    : "Sign in to manage sales, staff, and payroll for your business.")</p>
+
+                <form method="post" id="loginForm">
+                    <input type="hidden" id="employeeStep" name="EmployeeStep" value="@Model.EmployeeStep" />
+
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert" role="alert">@Model.ErrorMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.KioskSuccessMessage))
+                    {
+                        <div class="alert" style="background:#E6F4EA;color:#137333;border:1px solid #CEEAD6;" role="alert">@Model.KioskSuccessMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.KioskErrorMessage))
+                    {
+                        <div class="alert" style="background:#FCE8E6;color:#C5221F;border:1px solid #FAD2CF;" role="alert">@Model.KioskErrorMessage</div>
+                    }
+
+                    <!-- Account type switch -->
+                    <div class="seg reveal" style="--d:.3s" role="radiogroup" aria-label="Account type">
+                        <input type="radio" id="roleOwner" name="Input.Role" value="Owner" checked="@(!isEmployee)" />
+                        <input type="radio" id="roleEmployee" name="Input.Role" value="Employee" checked="@isEmployee" />
+                        <label for="roleOwner">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8l7-5 7 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8Z"/><path d="M8 17v-5h4v5"/></svg>
+                            Owner
+                        </label>
+                        <label for="roleEmployee">
+                            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="7" r="3.2"/><path d="M3.5 17c.8-3 3.3-4.6 6.5-4.6s5.7 1.6 6.5 4.6"/></svg>
+                            Employee
+                        </label>
+                        <span class="pill"></span>
+                    </div>
+
+                    <!-- OWNER FLOW: Only password input required -->
+                    <div id="ownerSection" class="@(isEmployee ? "hidden-section" : "")">
+                        <div class="field reveal" style="--d:.38s">
+                            <label class="lbl" for="ownerPassword">Owner Password</label>
+                            <div class="input">
+                                <svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg>
+                                <input id="ownerPassword" name="OwnerPassword" type="password" autocomplete="current-password"
+                                       placeholder="Enter owner password" @(!isEmployee ? "required" : "") />
+                                <button type="button" class="eye" data-target="ownerPassword" aria-label="Show password">
+                                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 10 15.5 1.5 10 1.5 10Z"/><circle cx="10" cy="10" r="2.5"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EMPLOYEE FLOW: Step 1 (Employee ID only) -> Step 2 (Password only, with back button) -->
+                    <div id="employeeSection" class="@(!isEmployee ? "hidden-section" : "")">
+                        <!-- Step 1: Employee ID input only -->
+                        <div id="empStep1" class="@(showEmployeePw ? "hidden-section" : "")">
+                            <div class="field reveal" style="--d:.38s">
+                                <label class="lbl" for="employeeId">Employee ID</label>
+                                <div class="input">
+                                    <svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4h12v12H4z"/><path d="M8 8h4M8 12h4"/></svg>
+                                    <input id="employeeId" name="Input.Identifier" type="text" autocomplete="username"
+                                           placeholder="Enter your employee ID" value="@Model.Input.Identifier" @(isEmployee && !showEmployeePw ? "required" : "") />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Verified Employee ID chip + Password input -->
+                        <div id="empStep2" class="@(!showEmployeePw ? "hidden-section" : "")">
+                            <div class="emp-chip-card">
+                                <div class="emp-chip-info">
+                                    <span class="emp-chip-sub">Employee ID</span>
+                                    <strong id="empIdDisplay" class="emp-chip-val">@Model.Input.Identifier</strong>
+                                </div>
+                                <button type="button" id="backToIdBtn" class="btn-subtle" title="Change Employee ID">
+                                    <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10H5M10 15l-5-5 5-5"/></svg>
+                                    <span>Change</span>
+                                </button>
+                            </div>
+
+                            <div class="field">
+                                <label class="lbl" for="employeePassword">Password</label>
+                                <div class="input">
+                                    <svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg>
+                                    <input id="employeePassword" name="Input.Password" type="password" autocomplete="current-password"
+                                           placeholder="Enter your password" @(isEmployee && showEmployeePw ? "required" : "") />
+                                    <button type="button" class="eye" data-target="employeePassword" aria-label="Show password">
+                                        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 15.5 10 15.5 1.5 10 1.5 10Z"/><circle cx="10" cy="10" r="2.5"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn reveal" style="--d:.52s" id="submitBtn">
+                        <span class="spinner" aria-hidden="true"></span>
+                        <span class="btn-text" id="submitBtnText">@(!isEmployee ? "Sign in" : (showEmployeePw ? "Sign in" : "Continue"))</span>
+                    </button>
+                </form>
+
+                <!-- DEDICATED QUICK KIOSK CLOCK-IN/OUT BUTTON & MODAL -->
+                <div class="reveal" style="--d:.58s; margin-top:20px; padding-top:16px; border-top:1px dashed rgba(35,70,51,0.18); text-align:center;">
+                    <div style="font-size:12.5px; color:#5A6E63; margin-bottom:8px;">Just clocking in or out for your shift?</div>
+                    <button type="button" onclick="openKioskClockModal()" class="btn-subtle" style="width:100%; justify-content:center; padding:12px; font-weight:700; color:var(--forest-dark); border:1.5px solid var(--forest-primary); background:#F4F8F5; border-radius:12px; cursor:pointer;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>Quick Store Time Clock (Punch In / Out)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="bottom">&copy; @DateTime.Now.Year Laufey &bull; All rights reserved.</footer>
+    </section>
+
+    <!-- RIGHT: photo panel with Laufey text and circular logo badge at top right -->
+    <section class="panel-photo" aria-hidden="true">
+        <img src="~/images/Laufey.jpg" alt="" asp-append-version="true" />
+        <div class="tint"></div>
+
+        <!-- Top right brand on the picture: Laufey text then circular logo -->
+        <div class="photo-brand-top reveal" style="--d:.1s">
+            <span class="photo-wordmark">Laufey</span>
+            <div class="photo-logo-circle">
+                <img src="~/images/Laufey.jpg" alt="Laufey Logo" asp-append-version="true" />
+            </div>
+        </div>
+
+        <div class="caption">
+            <h2 class="reveal" style="--d:.6s">Run your business<br />with clarity.</h2>
+            <p class="reveal" style="--d:.7s">Sales, staff hours, payroll, and advanced payments in one calm, simple place.</p>
+        </div>
+    </section>
+</div>
+
+<!-- Quick Kiosk Clock Modal -->
+<div id="kioskModal" class="modal-backdrop" style="display:none; position:fixed; inset:0; background:rgba(18,34,26,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#FFF; max-width:440px; width:100%; border-radius:20px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.2); animation:slideUp 0.25s ease;">
+        <div style="background:linear-gradient(135deg, #182C22 0%, #294F3B 100%); color:#FFF; padding:20px 24px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h3 style="margin:0; font-size:17px; font-weight:700;">Laufey Store Kiosk Clock</h3>
+                <div style="font-size:12px; color:#A9CCBA; margin-top:2px;">Punch In / Out using your Employee ID</div>
+            </div>
+            <button type="button" onclick="closeKioskClockModal()" style="background:none; border:none; color:#FFF; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+        <form method="post" asp-page-handler="KioskPunch" style="padding:24px;">
+            <div style="margin-bottom:18px;">
+                <label style="display:block; font-size:12.5px; font-weight:600; color:#234633; margin-bottom:6px;">Employee ID</label>
+                <div style="position:relative;">
+                    <input type="text" name="employeeId" required placeholder="e.g. EMP-001 or Jane Doe"
+                           style="width:100%; box-sizing:border-box; padding:12px 14px; border:1.5px solid #CFDDD4; border-radius:10px; font-size:15px; outline:none;" />
+                </div>
+                <div style="font-size:11.5px; color:#6B8074; margin-top:4px;">Enter your staff ID registered with the store.</div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label style="display:block; font-size:12.5px; font-weight:600; color:#234633; margin-bottom:8px;">Select Punch Action</label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <label style="display:flex; align-items:center; gap:8px; padding:12px 14px; border:1.5px solid #CFDDD4; border-radius:10px; cursor:pointer; background:#F8FAF8; font-size:13.5px; font-weight:600;">
+                        <input type="radio" name="punchType" value="0" checked /> Time In
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:12px 14px; border:1.5px solid #CFDDD4; border-radius:10px; cursor:pointer; background:#F8FAF8; font-size:13.5px; font-weight:600;">
+                        <input type="radio" name="punchType" value="1" /> Lunch Out
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:12px 14px; border:1.5px solid #CFDDD4; border-radius:10px; cursor:pointer; background:#F8FAF8; font-size:13.5px; font-weight:600;">
+                        <input type="radio" name="punchType" value="2" /> Lunch In
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; padding:12px 14px; border:1.5px solid #CFDDD4; border-radius:10px; cursor:pointer; background:#F8FAF8; font-size:13.5px; font-weight:600;">
+                        <input type="radio" name="punchType" value="3" /> Time Out
+                    </label>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="button" onclick="closeKioskClockModal()" style="flex:1; padding:12px; border-radius:10px; border:1px solid #D0DCD3; background:#F3F6F4; font-weight:600; cursor:pointer; color:#3A5043;">Cancel</button>
+                <button type="submit" style="flex:2; padding:12px; border-radius:10px; border:none; background:linear-gradient(135deg, #244935 0%, #172D21 100%); color:#FFF; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(24,44,34,0.25);">Confirm Punch</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openKioskClockModal() {
+    const m = document.getElementById('kioskModal');
+    if (m) m.style.display = 'flex';
+}
+function closeKioskClockModal() {
+    const m = document.getElementById('kioskModal');
+    if (m) m.style.display = 'none';
+}
+</script>
+<script src="~/js/login.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Build artifacts and IDE files
+bin/
+obj/
+publish/
+out/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.DotSettings.user
+
+# Sensitive Configuration & Credentials (Cybersecurity)
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+!appsettings.example.json
+.env
+.env.*
+*.secret
+secrets.json
+
+# Logs and local databases
+*.log
+*.db
+*.sqlite
+*.sqlite3
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini

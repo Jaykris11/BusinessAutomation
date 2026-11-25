@@ -1,0 +1,473 @@
+@page
+@model ClockModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Laufey | Employee Portal";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Laufey | Staff Workspace & Payslips</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body class="dashboard-body">
+
+<header class="mobile-topbar">
+    <div class="mobile-brand">
+        <div class="brand-circle">
+            <img src="~/images/Laufey.jpg" alt="Laufey Logo" asp-append-version="true" />
+        </div>
+        <span class="brand-name">Laufey</span>
+    </div>
+    <button type="button" class="btn-mobile-menu" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+</header>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
+
+<div class="app-shell">
+
+    <!-- 1. SLIM SIDEBAR (SAME LUXURY FOREST STYLING AS OWNER DASHBOARD) -->
+    <aside class="app-sidebar" id="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <div class="brand-circle">
+                    <img src="~/images/Laufey.jpg" alt="Laufey Logo" asp-append-version="true" />
+                </div>
+                <span class="brand-name">Laufey</span>
+            </div>
+
+            <div class="sidebar-group-title">Staff Portal</div>
+            <nav class="sidebar-nav">
+                <a href="/Clock" class="nav-link active">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                        <span>My Dashboard</span>
+                    </div>
+                </a>
+                <a href="/MyRequests" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        <span>Leaves & Vale Requests</span>
+                    </div>
+                </a>
+                <a href="/MyPayslips" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                        <span>My Payment Slips</span>
+                    </div>
+                    <span class="nav-badge-pill" style="background:#E6F4EA;color:#137333;">@Model.MyPayslips.Count</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-profile-card">
+            <div class="profile-info">
+                <div class="profile-avatar"><img src="~/images/Laufey.jpg" alt="Profile" asp-append-version="true" /></div>
+                <div>
+                    <div class="profile-name">@Model.WorkerName</div>
+                    <div class="profile-role">@Model.EmployeeId &bull; Staff</div>
+                </div>
+            </div>
+            <form method="post" asp-page-handler="Logout" style="display:inline; margin:0;">
+                <button type="submit" class="btn-signout" title="Sign out">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- 2. MAIN WORKSPACE AREA -->
+    <main class="app-workspace">
+        <header class="workspace-topbar">
+            <div class="welcome-col">
+                <h1>Welcome, @Model.WorkerName 👋</h1>
+                <p>Employee Portal &bull; <strong>@Model.CurrentShiftName</strong> &bull; IP: @Model.ClientIp</p>
+            </div>
+
+            <div class="topbar-right">
+                <a href="/MyRequests" class="btn-action-primary" style="padding:6px 14px; font-size:12.5px; text-decoration:none; display:inline-flex; align-items:center;">
+                    <span>+ Request Vale / Advance</span>
+                </a>
+                <a href="/MyRequests" class="btn-pos-launch" style="padding:6px 14px; font-size:12.5px; text-decoration:none; display:inline-flex; align-items:center;">
+                    <span>+ Request Leave / PTO</span>
+                </a>
+            </div>
+        </header>
+
+        <div class="workspace-scroll">
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="toast-alert toast-success"><span>✓ @Model.SuccessMessage</span></div>
+            }
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="toast-alert" style="background:#FCE8E6;color:#C5221F;"><span>⚠️ @Model.ErrorMessage</span></div>
+            }
+
+            <!-- METRIC CARDS -->
+            <div class="compact-kpi-row">
+                <div class="kpi-mini-card">
+                    <div class="kpi-mini-top"><span class="kpi-mini-title">Hours Put In Today</span></div>
+                    <div class="kpi-mini-val" id="empHoursToday" style="color:var(--forest-dark);">@Model.HoursWorkedToday.ToString("0.00") <span style="font-size:13px;font-weight:400;color:var(--text-muted);">hrs</span></div>
+                    <div class="kpi-mini-sub" style="color:#137333;">Logged on store kiosk</div>
+                </div>
+
+                <div class="kpi-mini-card">
+                    <div class="kpi-mini-top"><span class="kpi-mini-title">Gross Earned Today</span></div>
+                    <div class="kpi-mini-val" id="empGrossToday" style="color:#1E663B;">₱@Model.GrossEarnedToday.ToString("N2")</div>
+                    <div class="kpi-mini-sub" style="color:#137333;">Computed from verified punches</div>
+                </div>
+
+                <div class="kpi-mini-card">
+                    <div class="kpi-mini-top"><span class="kpi-mini-title">Accumulated Earnings (MTD)</span></div>
+                    <div class="kpi-mini-val" id="empAccumulatedWages" style="color:var(--forest-dark); font-weight:800;">₱@Model.TotalAccumulatedWages.ToString("N2")</div>
+                    <div class="kpi-mini-sub" style="color:var(--text-muted);">Month-to-date total</div>
+                </div>
+
+                <div class="kpi-mini-card" style="background:linear-gradient(145deg, #182C22 0%, #294F3B 100%); color:#FFF;">
+                    <div class="kpi-mini-top">
+                        <span class="kpi-mini-title" style="color:#A9CCBA;">Store Shift</span>
+                        <div class="pulse-badge" style="padding:2px 8px;font-size:10px;"><i class="pulse-dot"></i> Live</div>
+                    </div>
+                    <div>
+                        <div class="kpi-mini-val" id="liveTimer" style="color:#FFF; font-size:22px;">00:00:00</div>
+                        <div class="kpi-mini-sub" style="color:rgba(255,255,255,0.78);">Philippine Standard Time</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRID: CENTER 2/3 + RIGHT 1/3 -->
+            <div class="dashboard-grid-container">
+                <!-- Left 2/3 -->
+                <div style="display:flex; flex-direction:column; gap:24px;">
+
+                    <!-- SECTION 1: TODAY'S PUNCH TIMELINE LOG -->
+                    <div class="content-block" id="punchesSection">
+                        <div class="block-header">
+                            <div>
+                                <div class="block-title">Today's Verified Punch Activity</div>
+                                <div class="block-subtitle">Timestamps recorded via the store login kiosk</div>
+                            </div>
+                            <span class="badge-status badge-present">Kiosk Verified</span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="clean-table compact-staff-table">
+                                <thead>
+                                    <tr>
+                                        <th>Action Type</th>
+                                        <th>Timestamp (PH Time)</th>
+                                        <th>IP Address</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.TodayPunches.Any())
+                                    {
+                                        @foreach (var p in Model.TodayPunches)
+                                        {
+                                            <tr>
+                                                <td><strong>@p.Type</strong></td>
+                                                <td style="font-variant-numeric:tabular-nums;"><strong style="color:var(--forest-dark);">@p.TimestampUtc.AddHours(8).ToString("hh:mm:ss tt")</strong></td>
+                                                <td><span style="font-size:11px; color:var(--text-muted);">@(p.IpAddress ?? "127.0.0.1")</span></td>
+                                                <td><span class="badge-status badge-present">✓ Logged</span></td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr><td colspan="4" style="text-align:center; padding:18px; color:var(--text-muted);">No punches logged today yet. Use the Kiosk Time Clock on the Sign In page.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: PAYMENT SLIPS ISSUED BY OWNER -->
+                    <div class="content-block" id="payslipsSection">
+                        <div class="block-header">
+                            <div>
+                                <div class="block-title">Received Payment Slips (Payslips)</div>
+                                <div class="block-subtitle">Official wage payouts, gross pay, and advance deductions from owner</div>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="clean-table compact-staff-table">
+                                <thead>
+                                    <tr>
+                                        <th>Pay Period</th>
+                                        <th>Hours Worked</th>
+                                        <th>Hourly Rate</th>
+                                        <th>Gross Pay</th>
+                                        <th>Vale Deductions</th>
+                                        <th>Net Pay Disbursed</th>
+                                        <th>Payment Channel</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.MyPayslips.Any())
+                                    {
+                                        @foreach (var ps in Model.MyPayslips)
+                                        {
+                                            <tr>
+                                                <td><strong>@ps.PayPeriod</strong></td>
+                                                <td>@ps.HoursWorked.ToString("0.00") hrs</td>
+                                                <td>₱@ps.HourlyRate.ToString("N2")/hr</td>
+                                                <td>₱@ps.GrossPay.ToString("N2")</td>
+                                                <td style="color:#C5221F;">-₱@ps.CashAdvanceDeductions.ToString("N2")</td>
+                                                <td><strong style="color:#137333; font-size:14px;">₱@ps.NetPay.ToString("N2")</strong></td>
+                                                <td><span class="badge-status" style="background:#F0F5F1; color:var(--forest-dark);">@ps.PaymentMethod</span></td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr><td colspan="7" style="text-align:center; padding:18px; color:var(--text-muted);">No payment slips released for your account yet.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: MY REQUESTS & STATUSES (LEAVES & VALE) -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div class="content-block">
+                            <div class="block-header" style="margin-bottom:10px;">
+                                <strong style="font-size:13px; color:var(--forest-dark);">My Leave / PTO Requests</strong>
+                            </div>
+                            @if (Model.MyLeaves.Any())
+                            {
+                                @foreach (var l in Model.MyLeaves)
+                                {
+                                    <div style="background:#F9FBF9; border:1px solid #E1EBE4; border-radius:10px; padding:10px; margin-bottom:8px; font-size:12px;">
+                                        <div style="display:flex; justify-content:space-between;">
+                                            <strong>@l.TargetDate.ToString("MMM dd, yyyy") (@l.Type)</strong>
+                                            <span class="badge-status" style="font-weight:700; color:@(l.Status == PayrollApp.Web.Data.LeaveStatus.Approved ? "#137333" : (l.Status == PayrollApp.Web.Data.LeaveStatus.Rejected ? "#C5221F" : "#B06000"));">@l.Status</span>
+                                        </div>
+                                        <div style="color:var(--text-secondary); margin-top:4px;">Reason: "@l.Reason"</div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:12px 0;">No leave requests filed.</div>
+                            }
+                        </div>
+
+                        <div class="content-block">
+                            <div class="block-header" style="margin-bottom:10px;">
+                                <strong style="font-size:13px; color:var(--forest-dark);">My Cash Advance (Vale) Requests</strong>
+                            </div>
+                            @if (Model.MyAdvances.Any())
+                            {
+                                @foreach (var a in Model.MyAdvances)
+                                {
+                                    <div style="background:#F9FBF9; border:1px solid #E1EBE4; border-radius:10px; padding:10px; margin-bottom:8px; font-size:12px;">
+                                        <div style="display:flex; justify-content:space-between;">
+                                            <strong style="color:#137333;">₱@a.AmountRequested.ToString("N2")</strong>
+                                            <span class="badge-status" style="font-weight:700; color:@(a.Status == PayrollApp.Web.Data.AdvanceStatus.Approved ? "#137333" : (a.Status == PayrollApp.Web.Data.AdvanceStatus.Rejected ? "#C5221F" : "#B06000"));">@a.Status</span>
+                                        </div>
+                                        <div style="color:var(--text-secondary); margin-top:4px;">Reason: "@a.Reason"</div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:12px 0;">No advance requests filed.</div>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right 1/3: Store Announcements & Memo Board -->
+                <div class="workspace-right-sidebar">
+                    <div class="right-card" id="memosSection">
+                        <div class="right-card-header">
+                            <span class="right-card-title">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                Store Announcements & Memos
+                            </span>
+                        </div>
+                        <div>
+                            @if (Model.StoreAnnouncements.Any())
+                            {
+                                @foreach (var m in Model.StoreAnnouncements)
+                                {
+                                    <div class="memo-item">
+                                        <div class="memo-title">
+                                            @if (m.Priority == "Urgent")
+                                            {
+                                                <span style="color:#C5221F;">🔴 Urgent:</span>
+                                            }
+                                            @m.Title
+                                        </div>
+                                        <div class="memo-body">@m.Message</div>
+                                        <div class="memo-time">@m.CreatedAtUtc.AddHours(8).ToString("MMM dd, hh:mm tt")</div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:14px 0;">No memos posted by owner.</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal 1: Request Cash Advance / Vale -->
+<div class="modal-overlay" id="advanceModal">
+    <div class="modal-box">
+        <form method="post" asp-page-handler="RequestAdvance">
+            <div class="modal-head">
+                <h3>Request Cash Advance (Vale)</h3>
+                <button type="button" class="modal-close-btn" onclick="closeEmpModal('advanceModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Amount Requested (₱)</label>
+                    <input type="number" step="50" min="100" max="10000" name="amount" required placeholder="e.g. 500.00" />
+                </div>
+                <div class="form-group">
+                    <label>Reason / Purpose</label>
+                    <textarea name="reason" rows="3" required placeholder="Explain purpose of cash advance..." style="width:100%; border:1px solid #D5E2D9; border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-secondary" onclick="closeEmpModal('advanceModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Request Leave / PTO with Dynamic Slot Indicator -->
+<div class="modal-overlay" id="leaveModal">
+    <div class="modal-box">
+        <form method="post" asp-page-handler="RequestLeave">
+            <div class="modal-head">
+                <h3>Request Leave / PTO / VTO</h3>
+                <button type="button" class="modal-close-btn" onclick="closeEmpModal('leaveModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Leave Category</label>
+                    <select name="leaveType">
+                        <option value="0">Paid Time Off (PTO)</option>
+                        <option value="1">Voluntary Time Off (VTO)</option>
+                        <option value="2">Sick Leave</option>
+                        <option value="3">Vacation Leave</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Target Date</label>
+                    <input type="date" id="targetDateInput" name="targetDate" required
+                           min="@DateTime.UtcNow.AddHours(8).ToString("yyyy-MM-dd")"
+                           value="@DateTime.UtcNow.AddHours(8).AddDays(1).ToString("yyyy-MM-dd")"
+                           onchange="checkSlotAvailability(this.value)" />
+                    <div id="slotIndicator" style="margin-top:6px; display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600;">
+                        <span id="slotDot" style="width:10px; height:10px; border-radius:50%; background:#137333;"></span>
+                        <span id="slotText" style="color:#137333;">Slot available (0/2 slots taken)</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Reason for Leave (Required)</label>
+                    <textarea name="reason" rows="3" required placeholder="Explain why you are requesting this leave..." style="width:100%; border:1px solid #D5E2D9; border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-secondary" onclick="closeEmpModal('leaveModal')">Cancel</button>
+                <button type="submit" id="submitLeaveBtn" class="btn-primary">Submit Leave Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const slotCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DateSlotCounts));
+    const MAX_SLOTS = 2;
+
+    function checkSlotAvailability(dateVal) {
+        const count = slotCounts[dateVal] || 0;
+        const dot = document.getElementById('slotDot');
+        const text = document.getElementById('slotText');
+        const submitBtn = document.getElementById('submitLeaveBtn');
+
+        if (count >= MAX_SLOTS) {
+            dot.style.background = '#C5221F';
+            text.style.color = '#C5221F';
+            text.textContent = `❌ Slot Full (${count}/${MAX_SLOTS} slots taken). Pick another date.`;
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+        } else {
+            dot.style.background = '#137333';
+            text.style.color = '#137333';
+            text.textContent = `✓ Slot available (${count}/${MAX_SLOTS} slots taken)`;
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+        }
+    }
+
+    function openEmpModal(id) {
+        document.getElementById(id).classList.add('open');
+        if (id === 'leaveModal') {
+            const input = document.getElementById('targetDateInput');
+            if (input) checkSlotAvailability(input.value);
+        }
+    }
+    function closeEmpModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    function updateLiveClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        const el = document.getElementById('liveTimer');
+        if (el) el.textContent = `${h}:${m}:${s}`;
+    }
+    setInterval(updateLiveClock, 1000);
+    updateLiveClock();
+
+    function toggleMobileSidebar() {
+        const sb = document.getElementById('sidebar');
+        const bd = document.getElementById('sidebarBackdrop');
+        if (sb) sb.classList.toggle('sidebar-open');
+        if (bd) bd.classList.toggle('active');
+    }
+
+    // Live Metrics Polling (Real-time updates without refreshing)
+    async function fetchLiveMetrics() {
+        try {
+            const res = await fetch('/Clock?handler=LiveMetrics');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.ok) {
+                    const elHours = document.getElementById('empHoursToday');
+                    const elGross = document.getElementById('empGrossToday');
+                    const elAccum = document.getElementById('empAccumulatedWages');
+                    if (elHours) elHours.innerHTML = `${data.hoursToday} <span style="font-size:13px;font-weight:400;color:var(--text-muted);">hrs</span>`;
+                    if (elGross) elGross.textContent = `₱${data.grossToday}`;
+                    if (elAccum) elAccum.textContent = `₱${data.accumulatedWages}`;
+                }
+            }
+        } catch (e) {
+            // Silently continue
+        }
+    }
+    setInterval(fetchLiveMetrics, 3500);
+</script>
+</body>
+</html>
