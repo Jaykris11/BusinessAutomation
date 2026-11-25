@@ -87,7 +87,11 @@ CREATE TABLE IF NOT EXISTS "Workers" (
     "PayType" integer NOT NULL,
     "Rate" numeric(12,2) NOT NULL,
     "HoursPerDay" numeric(5,2) NOT NULL,
-    "IsActive" boolean NOT NULL
+    "IsActive" boolean NOT NULL,
+    "ShiftStart" text NOT NULL DEFAULT '09:00',
+    "ShiftEnd" text NOT NULL DEFAULT '18:00',
+    "LunchStart" text NOT NULL DEFAULT '12:00',
+    "LunchEnd" text NOT NULL DEFAULT '13:00'
 );
 
 CREATE TABLE IF NOT EXISTS "Punches" (

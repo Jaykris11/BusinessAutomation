@@ -228,4 +228,53 @@ public class LoginModel : PageModel
 
         return RedirectToPage();
     }
+
+    // AJAX Kiosk Punch endpoint (returns instant JSON so invalid ID errors show immediately inside modal)
+    public async Task<IActionResult> OnPostKioskPunchJsonAsync([FromForm] string employeeId, [FromForm] PunchType punchType)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(employeeId))
+            {
+                return new JsonResult(new { ok = false, message = "Please enter your Employee ID to clock." });
+            }
+
+            var empIdClean = employeeId.Trim();
+            var user = await _users.FindByNameAsync(empIdClean) ?? await _users.FindByEmailAsync(empIdClean);
+
+            Worker? worker = null;
+            if (user != null)
+            {
+                worker = await _db.Workers.FirstOrDefaultAsync(w => w.UserId == user.Id && w.IsActive);
+            }
+            if (worker == null)
+            {
+                worker = await _db.Workers.FirstOrDefaultAsync(w =>
+                    (w.FullName.ToLower() == empIdClean.ToLower() || ("EMP-" + w.Id.ToString("D3")).ToLower() == empIdClean.ToLower()) && w.IsActive);
+            }
+
+            if (worker == null)
+            {
+                return new JsonResult(new { ok = false, message = $"Invalid Employee ID '{employeeId}'. No active employee found with that ID." });
+            }
+
+            var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+            var result = await _punchService.PunchAsync(worker.BusinessId, worker.Id, punchType, clientIp);
+
+            if (!result.Ok)
+            {
+                return new JsonResult(new { ok = false, message = $"{worker.FullName}: {result.Message}" });
+            }
+
+            return new JsonResult(new
+            {
+                ok = true,
+                message = $"✓ {worker.FullName} — {punchType} recorded successfully at {DateTime.UtcNow.AddHours(8):hh:mm tt}!"
+            });
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { ok = false, message = $"Punch error: {ex.Message}" });
+        }
+    }
 }

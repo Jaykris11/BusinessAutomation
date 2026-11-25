@@ -30,6 +30,10 @@ public class Worker
     public decimal Rate { get; set; }            // per hour, or per day
     public decimal HoursPerDay { get; set; } = 8m;
     public bool IsActive { get; set; } = true;
+    public string ShiftStart { get; set; } = "09:00";
+    public string ShiftEnd { get; set; } = "18:00";
+    public string LunchStart { get; set; } = "12:00";
+    public string LunchEnd { get; set; } = "13:00";
 
     public decimal HourlyRate => PayType == PayType.Hourly ? Rate : Rate / HoursPerDay;
 }

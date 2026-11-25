@@ -1,0 +1,246 @@
+@page
+@model StaffAccountsModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Laufey | Staff Accounts & Onboarding";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Laufey | Staff Accounts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body class="dashboard-body">
+
+<header class="mobile-topbar">
+    <div class="mobile-brand">
+        <div class="brand-circle"><img src="~/images/Laufey.jpg" alt="Laufey Logo" asp-append-version="true" /></div>
+        <span class="brand-name">Laufey</span>
+    </div>
+    <button type="button" class="btn-mobile-menu" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+</header>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
+
+<div class="app-shell">
+    <aside class="app-sidebar" id="sidebar">
+        <div>
+            <div class="sidebar-brand">
+                <div class="brand-circle"><img src="~/images/Laufey.jpg" alt="Laufey Logo" asp-append-version="true" /></div>
+                <span class="brand-name">Laufey</span>
+            </div>
+
+            <div class="sidebar-group-title">Main Menu</div>
+            <nav class="sidebar-nav">
+                <a href="/Index" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                        <span>Dashboard</span>
+                    </div>
+                </a>
+                <a href="/Sales" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                        <span>Sales & POS</span>
+                    </div>
+                </a>
+                <a href="/Stocks" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                        <span>Stock Management</span>
+                    </div>
+                </a>
+                <a href="/StaffPerformance" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                        <span>Employee Performance</span>
+                    </div>
+                </a>
+                <a href="/Approvals" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        <span>Requests & Approvals</span>
+                    </div>
+                </a>
+                <a href="/Payslips" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                        <span>Send Payment Slips</span>
+                    </div>
+                </a>
+                <a href="/StaffAccounts" class="nav-link active">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                        <span>Staff Accounts</span>
+                    </div>
+                    <span class="nav-badge-pill">@Model.Accounts.Count</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-profile-card">
+            <div class="profile-info">
+                <div class="profile-avatar"><img src="~/images/Laufey.jpg" alt="Profile" asp-append-version="true" /></div>
+                <div><div class="profile-name">Store Owner</div><div class="profile-role">Laufey Admin</div></div>
+            </div>
+            <a href="/Login" class="btn-signout" title="Sign out">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </a>
+        </div>
+    </aside>
+
+    <main class="app-workspace">
+        <header class="workspace-topbar">
+            <div class="welcome-col">
+                <h1>Staff Accounts & Onboarding</h1>
+                <p>Create Employee ID credentials, passwords, and assigned shift schedules</p>
+            </div>
+        </header>
+
+        <div class="workspace-scroll">
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="toast-alert toast-success"><span>@Model.SuccessMessage</span></div>
+            }
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="toast-alert" style="background:#FCE8E6;color:#C5221F;"><span>@Model.ErrorMessage</span></div>
+            }
+
+            <div class="dashboard-grid-container">
+                <!-- LEFT 2/3: EXISTING ACCOUNTS TABLE -->
+                <div class="content-block">
+                    <div class="block-header">
+                        <div>
+                            <div class="block-title">Registered Employee Accounts</div>
+                            <div class="block-subtitle">Staff IDs active for Kiosk Clock-in and Employee Portal login</div>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                        <table class="clean-table compact-staff-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee ID</th>
+                                    <th>Full Name</th>
+                                    <th>Rate</th>
+                                    <th>Shift & Lunch</th>
+                                    <th>Status</th>
+                                    <th style="text-align:right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var acc in Model.Accounts)
+                                {
+                                    <tr>
+                                        <td><strong style="font-family:monospace; color:var(--forest-dark);">@acc.EmployeeId</strong></td>
+                                        <td><strong>@acc.FullName</strong></td>
+                                        <td>₱@acc.Rate.ToString("N2") @(acc.PayType == PayrollApp.Web.Data.PayType.Hourly ? "/hr" : "/day")</td>
+                                        <td style="font-size:11.5px; color:var(--text-secondary);">
+                                            <div>Shift: @acc.ShiftStart - @acc.ShiftEnd</div>
+                                            <div>Lunch: @acc.LunchStart - @acc.LunchEnd</div>
+                                        </td>
+                                        <td>
+                                            @if (acc.IsActive)
+                                            {
+                                                <span class="badge-status badge-present">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-status" style="background:#FCE8E6;color:#C5221F;">Inactive</span>
+                                            }
+                                        </td>
+                                        <td style="text-align:right;">
+                                            <form method="post" asp-page-handler="ToggleStatus" style="margin:0; display:inline;">
+                                                <input type="hidden" name="workerId" value="@acc.WorkerId" />
+                                                <button type="submit" class="btn-pill-action">@(acc.IsActive ? "Deactivate" : "Activate")</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RIGHT 1/3: CREATE NEW ACCOUNT FORM -->
+                <div class="content-block" style="height:fit-content;">
+                    <div class="block-header" style="margin-bottom:14px;">
+                        <div>
+                            <div class="block-title">Create New Employee Account</div>
+                            <div class="block-subtitle">Provision login credentials and shift hours</div>
+                        </div>
+                    </div>
+
+                    <form method="post" asp-page-handler="CreateAccount">
+                        <div class="form-group">
+                            <label>Employee ID (Login Username)</label>
+                            <input type="text" name="employeeId" required placeholder="e.g. EMP-008" />
+                        </div>
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" name="fullName" required placeholder="e.g. Clara Oswald" />
+                        </div>
+                        <div class="form-group">
+                            <label>Account Password (min 6 chars)</label>
+                            <input type="password" name="password" required minlength="6" placeholder="Enter initial password" />
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Pay Type</label>
+                                <select name="payType" style="width:100%; padding:9px; border-radius:8px; border:1px solid #CFDDD4;">
+                                    <option value="0">Hourly</option>
+                                    <option value="1">Daily</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Rate (₱)</label>
+                                <input type="number" step="0.01" name="rate" value="150.00" required />
+                            </div>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Shift Start</label>
+                                <input type="time" name="shiftStart" value="09:00" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Shift End</label>
+                                <input type="time" name="shiftEnd" value="18:00" required />
+                            </div>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Lunch Start</label>
+                                <input type="time" name="lunchStart" value="12:00" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Lunch End</label>
+                                <input type="time" name="lunchEnd" value="13:00" required />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-action-primary" style="width:100%; justify-content:center; padding:11px; margin-top:6px;">
+                            + Create Employee Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    function toggleMobileSidebar() {
+        const sb = document.getElementById('sidebar');
+        const bd = document.getElementById('sidebarBackdrop');
+        if (sb) sb.classList.toggle('sidebar-open');
+        if (bd) bd.classList.toggle('active');
+    }
+</script>
+</body>
+</html>

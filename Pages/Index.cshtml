@@ -92,6 +92,12 @@
                         <span>Send Payment Slips</span>
                     </div>
                 </a>
+                <a href="/StaffAccounts" class="nav-link">
+                    <div class="nav-link-left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                        <span>Staff Accounts</span>
+                    </div>
+                </a>
             </nav>
 
             <div class="sidebar-group-title">Preferences</div>
@@ -299,10 +305,10 @@
                                     <tr>
                                         <th>Staff Member</th>
                                         <th>Pay Rate</th>
-                                        <th>Hours Put In</th>
-                                        <th>Money Earned</th>
-                                        <th>Latest Punch</th>
-                                        <th>Status</th>
+                                        <th>Hours / Earned</th>
+                                        <th>Assigned Shift & Lunch</th>
+                                        <th>Live Status</th>
+                                        <th>Compliance</th>
                                         <th style="text-align:right;">Actions</th>
                                     </tr>
                                 </thead>
@@ -311,7 +317,11 @@
                                     {
                                         @foreach (var w in Model.WorkerAttendanceList)
                                         {
-                                            <tr>
+                                            var statusBg = w.LiveStatus == "Working" ? "#E6F4EA" : (w.LiveStatus == "On Lunch Break" ? "#FEF7E0" : (w.LiveStatus == "Clocked Out" ? "#F1F3F4" : "#FCE8E6"));
+                                            var statusColor = w.LiveStatus == "Working" ? "#137333" : (w.LiveStatus == "On Lunch Break" ? "#B06000" : (w.LiveStatus == "Clocked Out" ? "#5F6368" : "#C5221F"));
+                                            var compBg = w.ComplianceStatus == "On Schedule" ? "#E6F4EA" : (w.ComplianceStatus == "Off-Schedule" ? "#FCE8E6" : "#F1F3F4");
+                                            var compColor = w.ComplianceStatus == "On Schedule" ? "#137333" : (w.ComplianceStatus == "Off-Schedule" ? "#C5221F" : "#5F6368");
+                                            <tr data-worker-id="@w.WorkerId">
                                                 <td>
                                                     <div class="table-user-cell" style="gap:8px;">
                                                         <div class="table-user-avatar" style="width:28px;height:28px;">
@@ -325,30 +335,31 @@
                                                 </td>
                                                 <td>₱@w.Rate.ToString("N2") @(w.PayType == PayrollApp.Web.Data.PayType.Hourly ? "/hr" : "/day")</td>
                                                 <td>
-                                                    <strong style="color:var(--forest-dark);">@w.HoursWorked.ToString("0.00")</strong> hrs
+                                                    <div><strong class="col-hours" style="color:var(--forest-dark);">@w.HoursWorked.ToString("0.00")</strong> hrs</div>
+                                                    <div style="font-size:11.5px;"><strong class="col-earned" style="color:#1E663B;">₱@w.EarnedAmount.ToString("N2")</strong></div>
+                                                </td>
+                                                <td style="font-size:11px; color:var(--text-secondary);">
+                                                    <div>Shift: <strong>@w.ShiftStart - @w.ShiftEnd</strong></div>
+                                                    <div>Lunch: <strong>@w.LunchStart - @w.LunchEnd</strong></div>
                                                 </td>
                                                 <td>
-                                                    <strong style="color:#1E663B;">₱@w.EarnedAmount.ToString("N2")</strong>
+                                                    <span class="badge-status col-livestatus" style="background:@statusBg; color:@statusColor; font-size:10.5px; padding:2px 8px;">@w.LiveStatus</span>
+                                                    <div class="col-latestpunch" style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">@w.LatestPunch (@w.LatestPunchTime)</div>
                                                 </td>
                                                 <td>
-                                                    <span style="font-size:11px; background:#F0F5F1; padding:2px 6px; border-radius:4px;">@w.LatestPunch</span>
+                                                    <span class="badge-status col-compliance" style="background:@compBg; color:@compColor; font-size:10.5px; padding:2px 8px;">@w.ComplianceStatus</span>
+                                                    <div class="col-compnote" style="font-size:10px; color:@compColor; margin-top:2px;">@w.ComplianceNote</div>
                                                 </td>
-                                                <td>
-                                                    @if (w.IsClockedIn)
-                                                    {
-                                                        <span class="badge-status badge-present" style="font-size:10.5px; padding:2px 8px;">✓ Clocked In</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge-status" style="background:#FCE8E6;color:#C5221F;font-size:10.5px; padding:2px 8px;">✕ Absent</span>
-                                                    }
-                                                </td>
-                                                <td style="text-align:right;">
-                                                    <button type="button" class="table-action-btn" style="padding:2px 8px; font-size:11px;"
-                                                            onclick="openEditWorkerModal(@w.WorkerId, '@w.FullName', @((int)w.PayType), @w.Rate, 8)">
+                                                <td style="text-align:right; white-space:nowrap;">
+                                                    <button type="button" class="table-action-btn" style="padding:2px 8px; font-size:11px; background:#EEF4F0; color:var(--forest-dark);"
+                                                            onclick="openScheduleModal(@w.WorkerId, '@Html.Raw(w.FullName.Replace("'", "\\'"))', '@w.ShiftStart', '@w.ShiftEnd', '@w.LunchStart', '@w.LunchEnd')">
+                                                        Shift
+                                                    </button>
+                                                    <button type="button" class="table-action-btn" style="padding:2px 8px; font-size:11px; margin-left:3px;"
+                                                            onclick="openEditWorkerModal(@w.WorkerId, '@Html.Raw(w.FullName.Replace("'", "\\'"))', @((int)w.PayType), @w.Rate, 8)">
                                                         Edit
                                                     </button>
-                                                    <form method="post" asp-page-handler="DeactivateWorker" style="display:inline; margin-left:4px;" onsubmit="return confirm('Deactivate @w.FullName?');">
+                                                    <form method="post" asp-page-handler="DeactivateWorker" style="display:inline; margin-left:3px;" onsubmit="return confirm('Deactivate @w.FullName?');">
                                                         <input type="hidden" name="workerId" value="@w.WorkerId" />
                                                         <button type="submit" class="table-action-btn" style="color:#C0392B; padding:2px 8px; font-size:11px;">✕</button>
                                                     </form>
@@ -1005,13 +1016,56 @@
                 if (d.ok) {
                     const elClocked = document.getElementById('liveClockedInVal');
                     if (elClocked) elClocked.innerHTML = `${d.clockedInCount} <span style="font-size:14px;font-weight:400;color:var(--text-muted);">/ ${d.totalWorkers}</span>`;
+
+                    if (d.workerStates && Array.isArray(d.workerStates)) {
+                        d.workerStates.forEach(ws => {
+                            const row = document.querySelector(`tr[data-worker-id="${ws.workerId}"]`);
+                            if (!row) return;
+                            const stEl = row.querySelector('.col-livestatus');
+                            const lpEl = row.querySelector('.col-latestpunch');
+                            const cpEl = row.querySelector('.col-compliance');
+                            const cnEl = row.querySelector('.col-compnote');
+
+                            if (stEl) {
+                                stEl.textContent = ws.liveStatus;
+                                if (ws.liveStatus === 'Working') { stEl.style.background = '#E6F4EA'; stEl.style.color = '#137333'; }
+                                else if (ws.liveStatus === 'On Lunch Break') { stEl.style.background = '#FEF7E0'; stEl.style.color = '#B06000'; }
+                                else if (ws.liveStatus === 'Clocked Out') { stEl.style.background = '#F1F3F4'; stEl.style.color = '#5F6368'; }
+                                else { stEl.style.background = '#FCE8E6'; stEl.style.color = '#C5221F'; }
+                            }
+                            if (lpEl) lpEl.textContent = `${ws.latestPunch} (${ws.latestPunchTime})`;
+                            if (cpEl) {
+                                cpEl.textContent = ws.complianceStatus;
+                                if (ws.complianceStatus === 'On Schedule') { cpEl.style.background = '#E6F4EA'; cpEl.style.color = '#137333'; }
+                                else if (ws.complianceStatus === 'Off-Schedule') { cpEl.style.background = '#FCE8E6'; cpEl.style.color = '#C5221F'; }
+                                else { cpEl.style.background = '#F1F3F4'; cpEl.style.color = '#5F6368'; }
+                            }
+                            if (cnEl) {
+                                cnEl.textContent = ws.complianceNote;
+                                cnEl.style.color = ws.complianceStatus === 'Off-Schedule' ? '#C5221F' : (ws.complianceStatus === 'On Schedule' ? '#137333' : '#5F6368');
+                            }
+                        });
+                    }
                 }
             }
         } catch (e) {}
     }
     setInterval(fetchLiveOwnerStats, 4000);
 
-    // Interactive Financial Performance Chart (Chart.js)
+    function openScheduleModal(id, name, sStart, sEnd, lStart, lEnd) {
+        document.getElementById('schedWorkerId').value = id;
+        document.getElementById('schedWorkerName').textContent = name;
+        document.getElementById('schedShiftStart').value = sStart || '09:00';
+        document.getElementById('schedShiftEnd').value = sEnd || '18:00';
+        document.getElementById('schedLunchStart').value = lStart || '12:00';
+        document.getElementById('schedLunchEnd').value = lEnd || '13:00';
+        document.getElementById('scheduleModal').classList.add('open');
+    }
+    function closeScheduleModal() {
+        document.getElementById('scheduleModal').classList.remove('open');
+    }
+
+    // Interactive Financial Performance Chart (Chart.js) using Real Bucketed Data
     (function initFinanceChart() {
         const ctx = document.getElementById('ownerFinanceChart');
         if (!ctx) return;
@@ -1020,46 +1074,47 @@
         grad.addColorStop(0, 'rgba(58, 109, 81, 0.35)');
         grad.addColorStop(1, 'rgba(58, 109, 81, 0.0)');
 
-        const curSales = @Model.PeriodSales;
-        const curCap = @Model.PeriodCapital;
-        const curProfit = @Model.PeriodProfit;
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartLabels));
+        const salesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartSales));
+        const capitalData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartCapital));
+        const profitData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartProfit));
 
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['W1', 'W2', 'W3', 'W4', 'Current (@currentRange.ToUpper())'],
+                labels: labels,
                 datasets: [
                     {
                         label: 'Gross Sales (₱)',
-                        data: [curSales * 0.62, curSales * 0.78, curSales * 0.71, curSales * 0.89, curSales],
+                        data: salesData,
                         borderColor: '#234633',
                         backgroundColor: grad,
                         borderWidth: 2.5,
                         fill: true,
-                        tension: 0.4,
+                        tension: 0.35,
                         pointRadius: 4,
                         pointHoverRadius: 7,
                         pointBackgroundColor: '#234633'
                     },
                     {
                         label: 'Net Profit (₱)',
-                        data: [curProfit * 0.58, curProfit * 0.76, curProfit * 0.68, curProfit * 0.86, curProfit],
+                        data: profitData,
                         borderColor: '#137333',
                         borderWidth: 2,
                         borderDash: [5, 4],
                         fill: false,
-                        tension: 0.4,
+                        tension: 0.35,
                         pointRadius: 3,
                         pointHoverRadius: 6,
                         pointBackgroundColor: '#137333'
                     },
                     {
                         label: 'Capital / Cost (₱)',
-                        data: [curCap * 0.65, curCap * 0.80, curCap * 0.75, curCap * 0.91, curCap],
+                        data: capitalData,
                         borderColor: '#8F9E95',
                         borderWidth: 1.8,
                         fill: false,
-                        tension: 0.4,
+                        tension: 0.35,
                         pointRadius: 2,
                         pointHoverRadius: 5
                     }
@@ -1090,6 +1145,48 @@
         });
     })();
 </script>
+
+<!-- MODAL: EDIT WORKER SHIFT & LUNCH SCHEDULE -->
+<div class="modal-overlay" id="scheduleModal">
+    <div class="modal-box">
+        <form method="post" asp-page-handler="UpdateSchedule">
+            <input type="hidden" id="schedWorkerId" name="workerId" />
+            <div class="modal-head">
+                <h3>Set Shift & Lunch Schedule — <span id="schedWorkerName"></span></h3>
+                <button type="button" class="modal-close-btn" onclick="closeScheduleModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">
+                    Define working hours and authorized lunch window. Punches outside this schedule are flagged as <strong>Off-Schedule</strong>.
+                </p>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Shift Start (24hr)</label>
+                        <input type="time" id="schedShiftStart" name="shiftStart" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Shift End (24hr)</label>
+                        <input type="time" id="schedShiftEnd" name="shiftEnd" required />
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Lunch Break Start</label>
+                        <input type="time" id="schedLunchStart" name="lunchStart" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Lunch Break End</label>
+                        <input type="time" id="schedLunchEnd" name="lunchEnd" required />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn-secondary" onclick="closeScheduleModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Save Schedule</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 </body>
 </html>

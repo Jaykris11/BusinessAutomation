@@ -168,11 +168,13 @@
             </div>
             <button type="button" onclick="closeKioskClockModal()" style="background:none; border:none; color:#FFF; font-size:20px; cursor:pointer;">✕</button>
         </div>
-        <form method="post" asp-page-handler="KioskPunch" style="padding:24px;">
+        <form method="post" asp-page-handler="KioskPunch" id="kioskPunchForm" onsubmit="submitKioskPunch(event)" style="padding:24px;">
+            @Html.AntiForgeryToken()
+            <div id="kioskModalAlert" style="display:none; padding:12px 14px; border-radius:10px; font-size:13px; font-weight:600; margin-bottom:16px;"></div>
             <div style="margin-bottom:18px;">
                 <label style="display:block; font-size:12.5px; font-weight:600; color:#234633; margin-bottom:6px;">Employee ID</label>
                 <div style="position:relative;">
-                    <input type="text" name="employeeId" required placeholder="e.g. EMP-001 or Jane Doe"
+                    <input type="text" id="kioskEmployeeId" name="employeeId" required placeholder="e.g. EMP-001 or Jane Doe"
                            style="width:100%; box-sizing:border-box; padding:12px 14px; border:1.5px solid #CFDDD4; border-radius:10px; font-size:15px; outline:none;" />
                 </div>
                 <div style="font-size:11.5px; color:#6B8074; margin-top:4px;">Enter your staff ID registered with the store.</div>
@@ -207,11 +209,53 @@
 <script>
 function openKioskClockModal() {
     const m = document.getElementById('kioskModal');
+    const al = document.getElementById('kioskModalAlert');
+    if (al) al.style.display = 'none';
     if (m) m.style.display = 'flex';
 }
 function closeKioskClockModal() {
     const m = document.getElementById('kioskModal');
     if (m) m.style.display = 'none';
+}
+async function submitKioskPunch(e) {
+    e.preventDefault();
+    const form = e.target;
+    const al = document.getElementById('kioskModalAlert');
+    const btn = form.querySelector('button[type="submit"]');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
+    try {
+        const fd = new FormData(form);
+        const res = await fetch('/Login?handler=KioskPunchJson', {
+            method: 'POST',
+            body: fd
+        });
+        const data = await res.json();
+        al.style.display = 'block';
+        if (data.ok) {
+            al.style.background = '#E6F4EA';
+            al.style.color = '#137333';
+            al.style.border = '1px solid #CEEAD6';
+            al.textContent = data.message;
+            document.getElementById('kioskEmployeeId').value = '';
+        } else {
+            al.style.background = '#FCE8E6';
+            al.style.color = '#C5221F';
+            al.style.border = '1px solid #FAD2CF';
+            al.textContent = data.message || 'Invalid Employee ID or punch error.';
+        }
+    } catch (err) {
+        al.style.display = 'block';
+        al.style.background = '#FCE8E6';
+        al.style.color = '#C5221F';
+        al.style.border = '1px solid #FAD2CF';
+        al.textContent = 'Network error. Please try again.';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+    }
 }
 </script>
 <script src="~/js/login.js" asp-append-version="true"></script>

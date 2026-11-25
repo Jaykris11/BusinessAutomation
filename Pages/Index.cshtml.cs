@@ -71,9 +71,22 @@ public class IndexModel : PageModel
         public decimal EarnedAmount { get; set; }
         public bool IsClockedIn { get; set; }
         public string LatestPunch { get; set; } = "None";
+        public string LatestPunchTime { get; set; } = "--";
+        public string LiveStatus { get; set; } = "Not Yet In"; // Working | On Lunch Break | Clocked Out | Not Yet In
+        public string ShiftStart { get; set; } = "09:00";
+        public string ShiftEnd { get; set; } = "18:00";
+        public string LunchStart { get; set; } = "12:00";
+        public string LunchEnd { get; set; } = "13:00";
+        public string ComplianceStatus { get; set; } = "Pending"; // On Schedule | Off-Schedule | Pending
+        public string ComplianceNote { get; set; } = "Not yet clocked in";
     }
 
     public List<WorkerAttendanceRow> WorkerAttendanceList { get; set; } = new();
+
+    public List<string> ChartLabels { get; set; } = new();
+    public List<decimal> ChartSales { get; set; } = new();
+    public List<decimal> ChartCapital { get; set; } = new();
+    public List<decimal> ChartProfit { get; set; } = new();
 
     [TempData] public string? SuccessMessage { get; set; }
     [TempData] public string? ErrorMessage { get; set; }
@@ -119,25 +132,49 @@ public class IndexModel : PageModel
         var nowUtc = DateTime.UtcNow;
         var (startUtc, endUtc) = PunchService.TodayRangeUtc(nowUtc);
 
-        var workers = await _db.Workers.Where(w => w.BusinessId == bizId && w.IsActive).ToListAsync();
+        var workers = await _db.Workers.Where(w => w.BusinessId == bizId && w.IsActive).OrderBy(w => w.FullName).ToListAsync();
         var punches = await _db.Punches.Where(p => p.BusinessId == bizId && p.TimestampUtc >= startUtc && p.TimestampUtc < endUtc).ToListAsync();
 
         int clockedInCount = 0;
         decimal activeHourlyBurn = 0;
         decimal totalLaborCostToday = 0;
+        var workerStates = new List<object>();
 
         foreach (var w in workers)
         {
             var wPunches = punches.Where(p => p.WorkerId == w.Id).OrderBy(p => p.TimestampUtc).ToList();
             var worked = PayCalculator.WorkedTime(wPunches, nowUtc);
-            totalLaborCostToday += PayCalculator.Earned(worked, w.HourlyRate);
+            var earned = PayCalculator.Earned(worked, w.HourlyRate);
+            totalLaborCostToday += earned;
 
             var last = wPunches.LastOrDefault();
+            var liveStatus = last?.Type switch
+            {
+                PunchType.TimeIn or PunchType.LunchIn => "Working",
+                PunchType.LunchOut => "On Lunch Break",
+                PunchType.TimeOut => "Clocked Out",
+                _ => "Not Yet In"
+            };
+
             if (last != null && (last.Type == PunchType.TimeIn || last.Type == PunchType.LunchIn))
             {
                 clockedInCount++;
                 activeHourlyBurn += w.HourlyRate;
             }
+
+            var (compStatus, compNote) = EvaluateCompliance(w, wPunches);
+
+            workerStates.Add(new
+            {
+                workerId = w.Id,
+                liveStatus,
+                latestPunch = last != null ? last.Type.ToString() : "None",
+                latestPunchTime = last != null ? last.TimestampUtc.AddHours(8).ToString("hh:mm tt") : "--",
+                hoursWorked = Math.Round((decimal)worked.TotalHours, 2).ToString("0.00"),
+                earnedAmount = earned.ToString("N2"),
+                complianceStatus = compStatus,
+                complianceNote = compNote
+            });
         }
 
         var todaySalesTotal = await _db.Sales
@@ -155,8 +192,64 @@ public class IndexModel : PageModel
             activeHourlyBurn = activeHourlyBurn.ToString("N2"),
             totalLaborCostToday = totalLaborCostToday.ToString("N2"),
             todaySalesTotal = todaySalesTotal.ToString("N2"),
-            salesCount
+            salesCount,
+            workerStates
         });
+    }
+
+    public async Task<IActionResult> OnPostUpdateScheduleAsync([FromForm] int workerId, [FromForm] string shiftStart, [FromForm] string shiftEnd, [FromForm] string lunchStart, [FromForm] string lunchEnd)
+    {
+        var w = await _db.Workers.FirstOrDefaultAsync(x => x.Id == workerId);
+        if (w != null)
+        {
+            w.ShiftStart = string.IsNullOrWhiteSpace(shiftStart) ? "09:00" : shiftStart;
+            w.ShiftEnd = string.IsNullOrWhiteSpace(shiftEnd) ? "18:00" : shiftEnd;
+            w.LunchStart = string.IsNullOrWhiteSpace(lunchStart) ? "12:00" : lunchStart;
+            w.LunchEnd = string.IsNullOrWhiteSpace(lunchEnd) ? "13:00" : lunchEnd;
+            await _db.SaveChangesAsync();
+            SuccessMessage = $"✓ Updated shift schedule for {w.FullName}.";
+        }
+        return RedirectToPage(new { Range });
+    }
+
+    private static (string Status, string Note) EvaluateCompliance(Worker w, List<Punch> todayPunches)
+    {
+        if (todayPunches.Count == 0)
+            return ("Pending", "Not yet clocked in");
+
+        var violations = new List<string>();
+        TimeSpan.TryParse(w.ShiftStart, out var shiftStart);
+        TimeSpan.TryParse(w.ShiftEnd, out var shiftEnd);
+        TimeSpan.TryParse(w.LunchStart, out var lunchStart);
+        TimeSpan.TryParse(w.LunchEnd, out var lunchEnd);
+
+        var timeIn = todayPunches.FirstOrDefault(p => p.Type == PunchType.TimeIn);
+        if (timeIn != null)
+        {
+            var inPh = timeIn.TimestampUtc.AddHours(8).TimeOfDay;
+            if (inPh > shiftStart.Add(TimeSpan.FromMinutes(15)))
+                violations.Add($"Late In ({timeIn.TimestampUtc.AddHours(8):hh:mm tt})");
+        }
+
+        var lunchOut = todayPunches.FirstOrDefault(p => p.Type == PunchType.LunchOut);
+        if (lunchOut != null)
+        {
+            var loPh = lunchOut.TimestampUtc.AddHours(8).TimeOfDay;
+            if (loPh < lunchStart.Subtract(TimeSpan.FromMinutes(10)) || loPh > lunchEnd)
+                violations.Add($"Off-Schedule Lunch ({lunchOut.TimestampUtc.AddHours(8):hh:mm tt})");
+        }
+
+        var timeOut = todayPunches.FirstOrDefault(p => p.Type == PunchType.TimeOut);
+        if (timeOut != null)
+        {
+            var outPh = timeOut.TimestampUtc.AddHours(8).TimeOfDay;
+            if (outPh < shiftEnd.Subtract(TimeSpan.FromMinutes(10)))
+                violations.Add($"Early Out ({timeOut.TimestampUtc.AddHours(8):hh:mm tt})");
+        }
+
+        return violations.Count > 0
+            ? ("Off-Schedule", string.Join(" • ", violations))
+            : ("On Schedule", "Following assigned shift");
     }
 
     private async Task LoadDataAsync()
@@ -164,12 +257,21 @@ public class IndexModel : PageModel
         try
         {
             var nowUtc = DateTime.UtcNow;
+            var nowPh = nowUtc.AddHours(8);
+            var (todayStartUtc, todayEndUtc) = PunchService.TodayRangeUtc(nowUtc);
+
+            // Calculate PH-aligned period start UTC
+            int diffToMon = ((int)nowPh.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+            var weekStartPh = DateTime.SpecifyKind(nowPh.Date.AddDays(-diffToMon), DateTimeKind.Utc);
+            var monthStartPh = new DateTime(nowPh.Year, nowPh.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var yearStartPh = new DateTime(nowPh.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
             DateTime startUtc = Range.ToLower() switch
             {
-                "weekly" => nowUtc.AddDays(-7),
-                "monthly" => nowUtc.AddMonths(-1),
-                "yearly" => nowUtc.AddYears(-1),
-                _ => DateTime.UtcNow.Date
+                "weekly" => weekStartPh.AddHours(-8),
+                "monthly" => monthStartPh.AddHours(-8),
+                "yearly" => yearStartPh.AddHours(-8),
+                _ => todayStartUtc
             };
 
             var workers = await _db.Workers
@@ -182,6 +284,10 @@ public class IndexModel : PageModel
             var punches = await _db.Punches
                 .Where(p => p.BusinessId == BusinessId && p.TimestampUtc >= startUtc)
                 .ToListAsync();
+
+            var todayPunchesAll = Range.ToLower() == "daily"
+                ? punches
+                : await _db.Punches.Where(p => p.BusinessId == BusinessId && p.TimestampUtc >= todayStartUtc && p.TimestampUtc < todayEndUtc).ToListAsync();
 
             var userIds = workers.Where(w => !string.IsNullOrEmpty(w.UserId)).Select(w => w.UserId).ToList();
             var identityUsers = await _users.Users.Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.UserName ?? "");
@@ -197,13 +303,24 @@ public class IndexModel : PageModel
                 var hours = Math.Round((decimal)workedTime.TotalHours, 2);
                 var earned = PayCalculator.Earned(workedTime, worker.HourlyRate);
 
-                var latest = workerPunches.LastOrDefault();
+                var todayWorkerPunches = todayPunchesAll.Where(p => p.WorkerId == worker.Id).OrderBy(p => p.TimestampUtc).ToList();
+                var latest = todayWorkerPunches.LastOrDefault();
+                var liveStatus = latest?.Type switch
+                {
+                    PunchType.TimeIn or PunchType.LunchIn => "Working",
+                    PunchType.LunchOut => "On Lunch Break",
+                    PunchType.TimeOut => "Clocked Out",
+                    _ => "Not Yet In"
+                };
+
                 bool isClockedIn = latest != null && (latest.Type == PunchType.TimeIn || latest.Type == PunchType.LunchIn);
                 if (isClockedIn)
                 {
                     clockedInCounter++;
                     activeHourlyBurn += worker.HourlyRate;
                 }
+
+                var (compStatus, compNote) = EvaluateCompliance(worker, todayWorkerPunches);
 
                 string empId = worker.UserId != null && identityUsers.TryGetValue(worker.UserId, out var uname) 
                     ? uname 
@@ -219,7 +336,15 @@ public class IndexModel : PageModel
                     HoursWorked = hours,
                     EarnedAmount = earned,
                     IsClockedIn = isClockedIn,
-                    LatestPunch = latest != null ? latest.Type.ToString() : "None"
+                    LatestPunch = latest != null ? latest.Type.ToString() : "None",
+                    LatestPunchTime = latest != null ? latest.TimestampUtc.AddHours(8).ToString("hh:mm tt") : "--",
+                    LiveStatus = liveStatus,
+                    ShiftStart = worker.ShiftStart,
+                    ShiftEnd = worker.ShiftEnd,
+                    LunchStart = worker.LunchStart,
+                    LunchEnd = worker.LunchEnd,
+                    ComplianceStatus = compStatus,
+                    ComplianceNote = compNote
                 });
             }
 
@@ -243,10 +368,75 @@ public class IndexModel : PageModel
             var estimatedCogs = PeriodSales * 0.42m;
             PeriodCapital = Math.Round(estimatedCogs + TotalLaborCostSoFar, 2);
             
-            // If capital is calculated as 0 (no punches/sales yet), give representative ratio
             if (PeriodCapital == 0 && PeriodSales > 0) PeriodCapital = PeriodSales * 0.45m;
             PeriodProfit = PeriodSales - PeriodCapital;
             ProfitMarginPct = PeriodSales > 0 ? Math.Round((PeriodProfit / PeriodSales) * 100, 1) : 0;
+
+            // Build Real Chart.js Buckets (Daily / Weekly / Monthly / Yearly)
+            ChartLabels.Clear();
+            ChartSales.Clear();
+            ChartCapital.Clear();
+            ChartProfit.Clear();
+
+            var rangeKey = Range.ToLower();
+            if (rangeKey == "weekly")
+            {
+                string[] days = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+                for (int i = 0; i < 7; i++)
+                {
+                    var dPh = weekStartPh.AddDays(i).Date;
+                    var daySales = sales.Where(s => s.TimestampUtc.AddHours(8).Date == dPh).Sum(s => s.TotalAmount);
+                    var dayCap = Math.Round(daySales * 0.42m, 2);
+                    ChartLabels.Add(days[i]);
+                    ChartSales.Add(daySales);
+                    ChartCapital.Add(dayCap);
+                    ChartProfit.Add(daySales - dayCap);
+                }
+            }
+            else if (rangeKey == "monthly")
+            {
+                for (int w = 1; w <= 4; w++)
+                {
+                    int minDay = (w - 1) * 7 + 1;
+                    int maxDay = w < 4 ? w * 7 : 31;
+                    var wkSales = sales.Where(s => { var d = s.TimestampUtc.AddHours(8).Day; return d >= minDay && d <= maxDay; }).Sum(s => s.TotalAmount);
+                    var wkCap = Math.Round(wkSales * 0.42m, 2);
+                    ChartLabels.Add($"Week {w}");
+                    ChartSales.Add(wkSales);
+                    ChartCapital.Add(wkCap);
+                    ChartProfit.Add(wkSales - wkCap);
+                }
+            }
+            else if (rangeKey == "yearly")
+            {
+                string[] months = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+                for (int m = 1; m <= 12; m++)
+                {
+                    var mSales = sales.Where(s => s.TimestampUtc.AddHours(8).Month == m && s.TimestampUtc.AddHours(8).Year == nowPh.Year).Sum(s => s.TotalAmount);
+                    var mCap = Math.Round(mSales * 0.42m, 2);
+                    ChartLabels.Add(months[m - 1]);
+                    ChartSales.Add(mSales);
+                    ChartCapital.Add(mCap);
+                    ChartProfit.Add(mSales - mCap);
+                }
+            }
+            else
+            {
+                // Daily: 6 time windows
+                int[] hourBuckets = { 6, 9, 12, 15, 18, 21 };
+                string[] hourLabels = { "6AM-9AM", "9AM-12PM", "12PM-3PM", "3PM-6PM", "6PM-9PM", "9PM+" };
+                for (int b = 0; b < hourBuckets.Length; b++)
+                {
+                    int hMin = hourBuckets[b];
+                    int hMax = b < hourBuckets.Length - 1 ? hourBuckets[b + 1] : 24;
+                    var bSales = sales.Where(s => { var hr = s.TimestampUtc.AddHours(8).Hour; return hr >= hMin && hr < hMax; }).Sum(s => s.TotalAmount);
+                    var bCap = Math.Round(bSales * 0.42m, 2);
+                    ChartLabels.Add(hourLabels[b]);
+                    ChartSales.Add(bSales);
+                    ChartCapital.Add(bCap);
+                    ChartProfit.Add(bSales - bCap);
+                }
+            }
 
             // Inventory & Stock
             AllProducts = await _db.Products
