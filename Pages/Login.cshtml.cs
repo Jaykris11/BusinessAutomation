@@ -46,6 +46,18 @@ public class LoginModel : PageModel
         public string Password { get; set; } = "";
     }
 
+    public async Task<IActionResult> OnGetLogoutAsync()
+    {
+        await _signIn.SignOutAsync();
+        return RedirectToPage("/Login");
+    }
+
+    public async Task<IActionResult> OnPostLogoutAsync()
+    {
+        await _signIn.SignOutAsync();
+        return RedirectToPage("/Login");
+    }
+
     public IActionResult OnGet()
     {
         if (User.Identity?.IsAuthenticated == true)

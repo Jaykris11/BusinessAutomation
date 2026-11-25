@@ -22,9 +22,15 @@
         <div class="brand-circle"><img src="~/images/Laufey.jpg" alt="Laufey Logo" asp-append-version="true" /></div>
         <span class="brand-name">Laufey</span>
     </div>
-    <button type="button" class="btn-mobile-menu" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
+    <div class="mobile-topbar-actions">
+        <a href="/Logout" class="btn-mobile-signout" title="Sign out">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Logout</span>
+        </a>
+        <button type="button" class="btn-mobile-menu" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+    </div>
 </header>
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
 
@@ -92,8 +98,9 @@
                 <div class="profile-avatar"><img src="~/images/Laufey.jpg" alt="Profile" asp-append-version="true" /></div>
                 <div><div class="profile-name">Store Owner</div><div class="profile-role">Laufey Admin</div></div>
             </div>
-            <a href="/Login" class="btn-signout" title="Sign out">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <a href="/Logout" class="btn-signout" title="Sign out">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Logout</span>
             </a>
         </div>
     </aside>
@@ -104,10 +111,16 @@
                 <h1>Stock & Inventory Catalog</h1>
                 <p>Manage product items, dedicated cost and selling prices, restock quantities, and low stock thresholds</p>
             </div>
-            <button type="button" class="btn-action-primary" onclick="openStockModal('addStockModal')">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>+ Add Stock Item</span>
-            </button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-action-primary" onclick="openStockModal('addStockModal')">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>+ Add Stock Item</span>
+                </button>
+                <a href="/Logout" class="btn-topbar-signout" title="Sign out">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <span>Logout</span>
+                </a>
+            </div>
         </header>
 
         <div class="workspace-scroll">

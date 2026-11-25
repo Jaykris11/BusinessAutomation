@@ -348,4 +348,16 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
 
+app.MapGet("/Logout", async (SignInManager<IdentityUser> signInManager) =>
+{
+    await signInManager.SignOutAsync();
+    return Results.Redirect("/Login");
+});
+
+app.MapPost("/Logout", async (SignInManager<IdentityUser> signInManager) =>
+{
+    await signInManager.SignOutAsync();
+    return Results.Redirect("/Login");
+});
+
 app.Run();
